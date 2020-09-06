@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  lambda-errors-to-slack
+
+  Subscribes to tagged Lambdas in your account and forwards their errors to a specified Slack channel 
+
+
+Parameters:
+  SlackWebhookURL:
+    Type: String
+    Description: If your Slack Webhook URL looks like this https://hooks.slack.com/services/ABCDEF123/12345ABCDEF/XXXXYYYYXXXXYYYYXXXXYYYY then set this variable to ABCDEF123/12345ABCDEF/XXXXYYYYXXXXYYYYXXXXYYYY
+
+Resources:
+
+  AlerterLambda:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: alerter/
+      Handler: index.lambdaHandler
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          SLACK_WEBHOOK_URL: !Ref SlackWebhookURL
+  SubscriberLambda:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: subscriber/
+      Handler: index.lambdaHandler
+      Runtime: nodejs12.x
+      Policies:
+      - Version: '2012-10-17' # Policy Document
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:PutSubscriptionFilter
+              - logs:DescribeSubscriptionFilters
+              - logs:DeleteSubscriptionFilter
+            Resource: '*'
+      Environment:
+        Variables:
+          ALERTER_LAMBDA: !GetAtt AlerterLambda.Arn
+      Events:
+        TagUpdate:
+          Type: CloudWatchEvent
+          Properties:
+            Pattern:
+              detail:
+                service:
+                  - lambda
+                resource-type:
+                  - function
+              detail-type:
+                - "Tag Change on Resource"
+              source:
+                - "aws.tag"
+  InvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Ref: AlerterLambda
+      Principal: "logs.amazonaws.com"
+
