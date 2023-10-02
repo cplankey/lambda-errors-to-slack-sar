@@ -1,7 +1,6 @@
 // Load the SDK for JavaScript
-var AWS = require('aws-sdk');
-
-const cloudwatchlogs = new AWS.CloudWatchLogs();
+import { CloudWatchLogsClient, DescribeSubscriptionFiltersCommand, DeleteSubscriptionFilterCommand, PutSubscriptionFilterCommand } from '@aws-sdk/client-cloudwatch-logs';
+const cloudWatchLogsClient = new CloudWatchLogsClient({});
 /**
  *
  * Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
@@ -14,7 +13,7 @@ const cloudwatchlogs = new AWS.CloudWatchLogs();
  * @returns {Object} object - API Gateway Lambda Proxy Output Format
  *
  */
-exports.lambdaHandler = async (event, context) => {
+export const lambdaHandler = async (event, context) => {
     console.log(JSON.stringify(event));
     const detail = event.detail;
     const resourceSplit = event.resources[0].split(':');
@@ -38,7 +37,7 @@ exports.lambdaHandler = async (event, context) => {
         };
         let describeSubscriptionFiltersResult;
         try {
-            describeSubscriptionFiltersResult = await cloudwatchlogs.describeSubscriptionFilters(params).promise();
+            describeSubscriptionFiltersResult = await cloudWatchLogsClient.send(new DescribeSubscriptionFiltersCommand(params));
         } catch (err) {
             console.log('Unable to describe subscription filters');
             //dont throw so we can try removing the log subscription just in case it is there
@@ -57,7 +56,7 @@ exports.lambdaHandler = async (event, context) => {
             });
             if (removeParams) {
                 try{
-                    await cloudwatchlogs.deleteSubscriptionFilter(removeParams).promise();
+                    await cloudWatchLogsClient.send(new DeleteSubscriptionFilterCommand(removeParams));
                 }catch(err){
                     console.log(err);
                     throw err;
@@ -80,7 +79,7 @@ exports.lambdaHandler = async (event, context) => {
             distribution: 'ByLogStream'
         };
         try {
-            await cloudwatchlogs.putSubscriptionFilter(params).promise();
+            await cloudWatchLogsClient.send(new PutSubscriptionFilterCommand(params));
         } catch (err) {
             console.log(err);
             throw err;

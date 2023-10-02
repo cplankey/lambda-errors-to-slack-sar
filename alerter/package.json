@@ -8,7 +8,5 @@
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "bluebird": "^3.7.2"
-  }
+  "type": "module"
 }
