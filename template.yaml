@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  lambda-errors-to-slack
+  lambda-errors-to-slack-sdk-v3
 
   Subscribes to tagged Lambdas in your account and forwards their errors to a specified Slack channel 
 
@@ -18,7 +18,7 @@ Resources:
     Properties:
       CodeUri: alerter/
       Handler: index.lambdaHandler
-      Runtime: nodejs12.x
+      Runtime: nodejs18.x
       Environment:
         Variables:
           SLACK_WEBHOOK_URL: !Ref SlackWebhookURL
@@ -27,7 +27,7 @@ Resources:
     Properties:
       CodeUri: subscriber/
       Handler: index.lambdaHandler
-      Runtime: nodejs12.x
+      Runtime: nodejs18.x
       Policies:
       - Version: '2012-10-17' # Policy Document
         Statement:

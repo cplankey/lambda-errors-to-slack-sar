@@ -1,6 +1,8 @@
-const https = require('https');
-const Promise    = require('bluebird');
-const zlib       = Promise.promisifyAll(require('zlib'));
+import https from 'https';
+import zlib from 'zlib';
+import { promisify } from 'util';
+const gunzipAsync = promisify(zlib.gunzip);
+
 /**
  *
  * Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
@@ -13,9 +15,9 @@ const zlib       = Promise.promisifyAll(require('zlib'));
  * @returns {Object} object - API Gateway Lambda Proxy Output Format
  *
  */
-exports.lambdaHandler = async (event, context) => {
+export const lambdaHandler = async (event, context) => { 
     const payload = Buffer.from(event.awslogs.data, 'base64');
-    const gunzipped = (await zlib.gunzipAsync(payload)).toString('utf8');
+    const gunzipped = (await gunzipAsync(payload)).toString('utf8');
     const eventDetails = JSON.parse(gunzipped);
     let messageArray = eventDetails.logEvents[0].message.split('\t');
     let errorJSON, errorType, errorMessage;
